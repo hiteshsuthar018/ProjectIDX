@@ -4,13 +4,27 @@ import EditorButton from "../components/atoms/EditorButton/EditorButton";
 import TreeStructure from "../components/organisms/TreeStructure/TreeStructure";
 import { useEffect } from "react";
 import { useTreeStructureStore } from "../store/treeStructureStore";
-
+import { io } from "socket.io-client";
+import useEditorSocketStore from "../store/editorSocketStore";
 const ProjectPlayground = () => {
   const { projectId:projectIdFromUrl } = useParams();
   const { setProjectId ,projectId} = useTreeStructureStore();
+   const {setEditorSocket} = useEditorSocketStore();
+
   useEffect(() => {
-    setProjectId(projectIdFromUrl)
-  }, [projectIdFromUrl, setProjectId])
+    if(projectIdFromUrl){
+      setProjectId(projectIdFromUrl)
+    const editorSocketConn = io(`${import.meta.env.VITE_BACKEND_URL}/editor`,{
+      query:{
+        projectId:projectIdFromUrl
+      }
+    });
+    setEditorSocket(editorSocketConn);
+    }
+  }, [projectIdFromUrl, setProjectId,setEditorSocket])
+
+
+
   return (
     <div>
       <div className="flex">

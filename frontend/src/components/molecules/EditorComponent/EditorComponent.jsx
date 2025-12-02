@@ -1,8 +1,11 @@
 import { Editor } from "@monaco-editor/react"
 import { useEffect, useState } from "react"
+import useEditorSocketStore from "../../../store/editorSocketStore";
+import { useActiveFileTabStore } from "../../../store/activeFileTabStore";
 const EditorComponent = () => {
     const [editorState , setEditorState] = useState({theme:null});
-
+   const {editorSocket} = useEditorSocketStore();
+const {activeFileTab,setActiveFileTab} = useActiveFileTabStore();
     const downloadTheme = async()=>{
         const response = await fetch('/dracula.json');
         const data = await response.json();
@@ -11,6 +14,11 @@ const EditorComponent = () => {
     useEffect(()=>{
        downloadTheme();
     },[])
+
+      editorSocket?.on("readFileSuccess",(response)=>{
+        const data = response.data;
+        setActiveFileTab(data.path,data.value,null);
+      })
 
     function handleEditorTheme(editor,monaco){
               
@@ -25,6 +33,7 @@ const EditorComponent = () => {
         width={'100%'}
         defaultLanguage="javascript"
         defaultValue="// Welcome to playground"
+        value={activeFileTab?.value}
         theme="vs-dark"
         options={{
             fontSize:18,

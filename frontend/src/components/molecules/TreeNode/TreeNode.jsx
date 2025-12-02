@@ -1,14 +1,23 @@
 import React, { useState } from 'react'
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import Fileicon from '../../atoms/Fileicon/Fileicon';
+import useEditorSocketStore from '../../../store/editorSocketStore';
 
 const TreeNode = ({fileFolderData}) => {
 
 const [visiblity,setVisiblity]=useState({});
-
+const {editorSocket} = useEditorSocketStore()
 const computeExtenstion = (fileFolderData) =>{
    const name = fileFolderData.name.split('.');
    return name[name.length - 1];
+}
+
+const handleDoubleClick = (fileFolderData) =>{
+  // Logic to handle file opening can be added here
+  editorSocket.emit("readFile",{
+    pathToFileOrFolder:fileFolderData.path
+  })
+  
 }
 
 const toggleVisibility = (name) =>{
@@ -21,7 +30,7 @@ const toggleVisibility = (name) =>{
 
   return (
     <div
-    className='pl-7'
+    className='pl-5'
     >
         {fileFolderData.children?
        ( 
@@ -30,18 +39,21 @@ const toggleVisibility = (name) =>{
          onClick={()=>toggleVisibility(fileFolderData.name)}
          >
         {visiblity[fileFolderData.name]?<IoIosArrowDown/>:<IoIosArrowForward/>}
-          {fileFolderData.name}
+          {fileFolderData.name.slice(0,15)}
           </button>
         )
         :(
-            <div className='flex  items-center gap-2'>
+            <button className='flex  items-center gap-2'
+            onDoubleClick={()=>handleDoubleClick(fileFolderData)}
+            >
               <Fileicon extention={computeExtenstion(fileFolderData)}/>
               <p 
             className='text-ls text-white cursor-pointer '
             >
               {fileFolderData?.name}
               </p>
-            </div>
+            
+            </button>
         )}
 
         {visiblity[fileFolderData.name] && fileFolderData.children && (

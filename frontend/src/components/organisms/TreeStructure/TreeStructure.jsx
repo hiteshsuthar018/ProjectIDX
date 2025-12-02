@@ -16,7 +16,7 @@ const TreeStructure = () => {
 ,[setTreeStructure,treeStructure]);
   return (
     <div>
-      <h1>Tree Structure</h1>
+      <h1 className='text-white'>Tree Structure</h1>
       {treeStructure && <TreeNode fileFolderData={treeStructure}/>}
     </div>
   )

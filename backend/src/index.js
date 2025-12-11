@@ -6,6 +6,9 @@ import apiRouter from "./routes/index.js";
 import {Server} from "socket.io";
 import chokidar from "chokidar";
 import { handleEditorSocketEvents } from "./socketHandlers/editorHandler.js";
+import {  GetContainerPort, handleContainerCreate } from "./containers/handleContainerCreate.js";
+import {WebSocketServer} from "ws";
+import { handleTerminalCreation } from "./containers/handleTerminalCreation.js";
 const app = express();
 const server = createServer(app);
 const io = new Server(server,{
@@ -32,9 +35,15 @@ const editornamespace = io.of('/editor');
 editornamespace.on("connection",(socket)=>{
     console.log("editor connected")
     // somehow we will get the project Id from frontend;
-    const queryParams = socket.handshake.query;
-    let projectId=queryParams.projectId;
+    const projectId = socket.handshake.query['projectId'];
+  
+
+
+    
+
  console.log("project Id recieved", projectId)
+
+
     if(projectId){
         var watcher = chokidar.watch(`./projects/${projectId}`,{
             ignored:(path)=>path.includes('node_modules') || path.includes('.git'),
@@ -49,7 +58,37 @@ editornamespace.on("connection",(socket)=>{
         })
     }
 
-    handleEditorSocketEvents(socket)
+    //joining room with projectId+path
+     socket.on("join_room", ({roomId}) => {
+      socket.join(roomId);
+      console.log(`User ${socket.id} joined room ${roomId}`);
+
+  
+    socket.to(roomId).emit("user_joined", {
+      userId: socket.id,
+      roomId
+    });
+});
+
+socket.on("getPort",async(conatinerId)=>{
+    
+    const port = await GetContainerPort(conatinerId);
+    socket.emit("getPortSuccess",port);
+ })
+
+socket.on("leave_room", ({roomId}) => {
+  socket.leave(roomId);
+  console.log(`User ${socket.id} left room ${roomId}`);
+
+  // Notify others
+  socket.to(roomId).emit("user_left", {
+    userId: socket.id,
+    roomId
+  });
+});
+
+handleEditorSocketEvents(socket,editornamespace)
+
 
    
     // socket.on("disconnect",async()=>{
@@ -57,6 +96,48 @@ editornamespace.on("connection",(socket)=>{
     //     console.log("editor  disconnected")
     // })
 })
+
+
+const webSocketForTerminal = new WebSocketServer({
+     noServer: true //we will handle the upgrade event
+ });
+
+
+
+server.on("upgrade",async (req,tcpSocket,head)=>{
+    /*
+    * req: Incoming http request
+    * socket: TCP socket
+    * head: Buffer containing the first packet of the upgrade stream
+    */
+    
+    //This callback will be called when a client tries to connect to the server through web socket
+
+    const isTerminal = req.url.includes("/terminal");
+
+    if(isTerminal){
+        console.log(req.url);
+        const projectId = req.url.split("=")[1];
+        await handleContainerCreate(projectId,webSocketForTerminal,req,tcpSocket,head)
+    }
+})
+
+webSocketForTerminal.on("connection",(ws,req,container)=>{
+    handleTerminalCreation(ws,container);
+
+    ws.on("close",()=>{
+        console.log("terminal connection closed");
+       container.remove({force:true},(err,data)=>{
+           if(err){
+            console.log("Error while removing container");
+           }
+           console.log("container remove successfully :",data);
+       })
+    })  
+})
+
+
+
 
 
 server.listen(PORT,()=>{

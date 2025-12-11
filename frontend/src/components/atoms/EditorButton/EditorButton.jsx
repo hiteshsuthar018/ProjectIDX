@@ -1,15 +1,21 @@
+import { useActiveFileTabStore } from "../../../store/activeFileTabStore";
+import { useFileTabStore } from "../../../store/fileTabStore";
 
-const EditorButton = ({ isActive }) => {
-
+const EditorButton = ({ isActive,path}) => {
+    const {removeFile} = useFileTabStore();
     const style = {
         active: "text-white bg-gradient-to-b from-[#3a3d4e] to-[#2d2f3c] border-t-2 border-blue-500 shadow-[inset_0_-2px_6px_rgba(0,0,0,0.4)]",
         inactive: "text-[#8b90aa] bg-[#262833] hover:bg-[#343746] hover:text-white transition-all duration-200"
     }
-
-    const handleClick = () =>{
-        //TODO: Implement handle click
-    }
+    const {setActiveFileTab} = useActiveFileTabStore();
+   const handleRemoveFileTab = (path)=>{
+      removeFile(path);
+      if(isActive){
+       setActiveFileTab(null);
+      }
+   }
     return (
+
         <button
             className={`
         group
@@ -24,10 +30,11 @@ const EditorButton = ({ isActive }) => {
             <span className="text-sm text-yellow-400">●</span>
 
             {/* File name */}
-            <span className="text-sm font-medium">file.js</span>
+            <span className="text-sm font-medium">{path?.split('/')?.pop()}</span>
 
             {/* Close icon (visible on hover OR active) */}
             <p
+              onClick={()=>handleRemoveFileTab(path,isActive)}
                 size={16}
                 className={`
           absolute right-2

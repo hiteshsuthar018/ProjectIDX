@@ -25,9 +25,9 @@ app.use(cors({  origin: "*"}));
 
 app.use('/api',apiRouter)
 
-app.get("/ping",(req,res)=>{
-    return res.json({mes:"pong"})
-})
+// app.get("/ping",(req,res)=>{
+//     return res.json({mes:"pong"})
+// })
 
 
 const editornamespace = io.of('/editor');
@@ -37,9 +37,6 @@ editornamespace.on("connection",(socket)=>{
     // somehow we will get the project Id from frontend;
     const projectId = socket.handshake.query['projectId'];
   
-
-
-    
 
  console.log("project Id recieved", projectId)
 

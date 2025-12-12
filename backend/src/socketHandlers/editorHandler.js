@@ -19,15 +19,26 @@ export const handleEditorSocketEvents = (socket, io) => {
         }
     })
     // creating new file
-    socket.on("createFile", async ({ pathToFile }) => {
-        const isFileAlreadyExist = await fs.stat(pathToFile);
+    socket.on("createFile", async ({ pathToFileOrFolder , name }) => {
+        const filePath = pathToFileOrFolder+'/'+name;
+        console.log("filePath", filePath)
+        let isFileAlreadyExist = false;
+        try {
+            await fs.access(filePath);
+            isFileAlreadyExist = true;
+        } catch (error) {
+            isFileAlreadyExist = false;
+        }
+        console.log("isFileAlreadyExist", isFileAlreadyExist)
         if (isFileAlreadyExist) {
             socket.emit("error", {
                 data: "File already Exist"
             })
         }
+        
         try {
-            await fs.writeFile(pathToFile, data, "");
+        
+            await fs.writeFile(filePath, "");
             socket.emit("createFileSuccess", {
                 data: "File created successfully"
             })
@@ -70,9 +81,9 @@ export const handleEditorSocketEvents = (socket, io) => {
         }
     })
     //creating folder
-    socket.on("createFolder", async ({ pathToFileOrFolder }) => {
+    socket.on("createFolder", async ({ pathToFileOrFolder,name }) => {
         try {
-            await fs.mkdir(pathToFileOrFolder);
+            await fs.mkdir(pathToFileOrFolder+'/'+name);
             socket.emit("createFolderSuccess", {
                 data: "folder created successfully"
             })
